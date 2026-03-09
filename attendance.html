@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Attendance</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+
+<body>
+
+<button class="dark-toggle" onclick="toggleDark()">
+<i class="fa-solid fa-moon"></i>
+</button>
+
+<script>
+if(localStorage.getItem("loggedIn")!=="true"){
+window.location.href="index.html"
+}
+</script>
+
+<div class="container">
+
+<h1 class="page-title">Attendance Management</h1>
+
+<!-- FORM -->
+
+<div class="form-box">
+
+<select id="name"></select>
+
+<input type="date" id="date">
+
+<select id="status">
+<option value="Present">Present</option>
+<option value="Absent">Absent</option>
+</select>
+
+<button onclick="saveAttendance()">Submit</button>
+
+</div>
+
+
+<!-- STATS -->
+
+<div class="stats">
+
+<div class="stat-box">
+Total
+<p id="totalCount">0</p>
+</div>
+
+<div class="stat-box">
+Present
+<p id="presentCount">0</p>
+</div>
+
+<div class="stat-box">
+Absent
+<p id="absentCount">0</p>
+</div>
+
+</div>
+
+
+<!-- TABLE -->
+
+<div class="table-box">
+
+<input type="text" id="search"
+placeholder="Search student..."
+onkeyup="searchRecords()">
+
+<br><br>
+
+<input type="date" id="filterDate" onchange="filterByDate()">
+
+<table>
+
+<tr>
+<th>Name</th>
+<th>Date</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+
+<tbody id="tableBody"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* LOAD STUDENTS */
+
+function loadStudents(){
+
+let students = JSON.parse(localStorage.getItem("students")) || []
+
+let select = document.getElementById("name")
+
+select.innerHTML="<option value=''>Select Student</option>"
+
+students.forEach(s=>{
+select.innerHTML += `<option value="${s.name}">${s.name}</option>`
+})
+
+}
+
+
+/* SAVE ATTENDANCE */
+
+function saveAttendance(){
+
+let name = document.getElementById("name").value
+let date = document.getElementById("date").value
+let status = document.getElementById("status").value
+
+if(name=="" || date==""){
+alert("Select student and date")
+return
+}
+
+let records = JSON.parse(localStorage.getItem("attendanceList")) || []
+
+let exists = records.find(r=> r.name===name && r.date===date)
+
+if(exists){
+alert("Attendance already marked")
+return
+}
+
+records.push({name,date,status})
+
+localStorage.setItem("attendanceList",JSON.stringify(records))
+
+displayRecords()
+
+}
+
+
+/* DISPLAY RECORDS */
+
+function displayRecords(){
+
+let records = JSON.parse(localStorage.getItem("attendanceList")) || []
+
+let table = document.getElementById("tableBody")
+
+table.innerHTML=""
+
+records.forEach((r,i)=>{
+
+table.innerHTML += `
+
+<tr>
+<td>${r.name}</td>
+<td>${r.date}</td>
+<td>${r.status}</td>
+<td>
+<button onclick="editRecord(${i})">Edit</button>
+<button onclick="deleteRecord(${i})">Delete</button>
+</td>
+</tr>
+
+`
+
+})
+
+filterByDate()
+
+}
+
+
+/* EDIT */
+
+function editRecord(i){
+
+let records = JSON.parse(localStorage.getItem("attendanceList"))
+
+document.getElementById("name").value = records[i].name
+document.getElementById("date").value = records[i].date
+document.getElementById("status").value = records[i].status
+
+}
+
+
+/* DELETE */
+
+function deleteRecord(i){
+
+let records = JSON.parse(localStorage.getItem("attendanceList"))
+
+records.splice(i,1)
+
+localStorage.setItem("attendanceList",JSON.stringify(records))
+
+displayRecords()
+
+}
+
+
+/* UPDATE STATS */
+
+function updateStats(){
+
+let rows = document.querySelectorAll("#tableBody tr")
+
+let total=0
+let present=0
+let absent=0
+
+rows.forEach(row=>{
+
+if(row.style.display!=="none"){
+
+total++
+
+let status=row.children[2].innerText
+
+if(status==="Present") present++
+if(status==="Absent") absent++
+
+}
+
+})
+
+document.getElementById("totalCount").innerText=total
+document.getElementById("presentCount").innerText=present
+document.getElementById("absentCount").innerText=absent
+
+}
+
+
+/* SEARCH */
+
+function searchRecords(){
+
+let value=document.getElementById("search").value.toLowerCase()
+
+document.querySelectorAll("#tableBody tr").forEach(row=>{
+
+row.style.display =
+row.innerText.toLowerCase().includes(value) ? "" : "none"
+
+})
+
+updateStats()
+
+}
+
+
+/* FILTER BY DATE */
+
+function filterByDate(){
+
+let selectedDate=document.getElementById("filterDate").value
+
+document.querySelectorAll("#tableBody tr").forEach(row=>{
+
+let rowDate=row.children[1].innerText
+
+if(selectedDate===""){
+row.style.display=""
+}else{
+row.style.display = (rowDate===selectedDate) ? "" : "none"
+}
+
+})
+
+updateStats()
+
+}
+
+
+/* PAGE LOAD */
+
+window.onload=function(){
+
+loadStudents()
+
+displayRecords()
+
+let today=new Date().toISOString().split("T")[0]
+
+document.getElementById("date").value=today
+document.getElementById("filterDate").value=today
+
+filterByDate()
+
+}
+
+
+/* DARK MODE */
+
+function toggleDark(){
+
+document.body.classList.toggle("dark")
+
+if(document.body.classList.contains("dark")){
+localStorage.setItem("theme","dark")
+}else{
+localStorage.setItem("theme","light")
+}
+
+}
+
+if(localStorage.getItem("theme")==="dark"){
+document.body.classList.add("dark")
+}
+
+</script>
+
+</body>
+</html>

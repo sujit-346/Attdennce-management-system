@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Dashboard</title>
+<link rel="stylesheet" href="dashboard.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+<button class="dark-toggle" onclick="toggleDark()">
+<i class="fa-solid fa-moon"></i>
+</button>
+<script>
+
+if(localStorage.getItem("loggedIn")!=="true"){
+window.location.href="index.html"
+}
+
+if(localStorage.getItem("role")!=="admin"){
+window.location.href="attendance.html"
+}
+
+function logout(){
+localStorage.removeItem("loggedIn")
+localStorage.removeItem("role")
+window.location.href="index.html"
+}
+
+</script>
+
+<div class="dashboard-container">
+
+<div class="dashboard-box">
+
+<h2>Admin Dashboard</h2>
+
+<div class="grid">
+
+<div class="card blue" onclick="location.href='attendance.html'">
+<h3>📋 Attendance</h3>
+<p>Manage attendance</p>
+</div>
+
+<div class="card orange" onclick="location.href='students.html'">
+<h3>🎓 Students</h3>
+<p>Manage students</p>
+</div>
+
+<div class="card green" onclick="location.href='analytics.html'">
+<h3>📊 Analytics</h3>
+<p>Attendance report</p>
+</div>
+
+<div class="card dark" onclick="logout()">
+<h3>🚪 Logout</h3>
+<p>Exit system</p>
+</div>
+
+</div>
+
+</div>
+
+</div>
+<script>function toggleDark(){
+
+document.body.classList.toggle("dark")
+
+if(document.body.classList.contains("dark")){
+localStorage.setItem("theme","dark")
+}else{
+localStorage.setItem("theme","light")
+}
+
+}
+
+if(localStorage.getItem("theme")==="dark"){
+document.body.classList.add("dark")
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Attendance Analytics</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+/* PAGE */
+
+body{
+font-family:Arial;
+padding:30px;
+margin:0;
+background:linear-gradient(135deg,#667eea,#764ba2);
+transition:0.3s;
+}
+
+/* DARK MODE */
+
+.dark{
+background:#0f172a;
+color:white;
+}
+
+.dark .container{
+background:#1e293b;
+color:white;
+}
+
+/* INPUTS */
+
+.dark input,
+.dark select{
+background:#334155;
+color:white;
+border:1px solid #475569;
+}
+
+/* CONTAINER */
+
+.container{
+max-width:900px;
+margin:auto;
+background:white;
+padding:30px;
+border-radius:12px;
+box-shadow:0 5px 20px rgba(0,0,0,0.1);
+}
+
+h2{
+margin-bottom:20px;
+}
+
+/* FORM */
+
+select,input{
+padding:10px;
+margin:10px 0;
+width:100%;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+button{
+padding:10px 20px;
+background:#2563eb;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+margin-top:10px;
+}
+
+/* STATS */
+
+.stats{
+display:flex;
+gap:20px;
+margin-top:20px;
+}
+
+.stat{
+flex:1;
+padding:20px;
+border-radius:10px;
+text-align:center;
+font-size:18px;
+}
+
+.stat span{
+display:block;
+font-size:28px;
+font-weight:bold;
+margin-top:5px;
+}
+
+/* LIGHT MODE COLORS */
+
+.stat-total{
+background:#e5e7eb;
+}
+
+.stat-present{
+background:#bbf7d0;
+color:#065f46;
+}
+
+.stat-absent{
+background:#fecaca;
+color:#7f1d1d;
+}
+
+/* DARK MODE COLORS */
+
+.dark .stat-total{
+background:#475569;
+color:white;
+}
+
+.dark .stat-present{
+background:#16a34a;
+color:white;
+}
+
+.dark .stat-absent{
+background:#dc2626;
+color:white;
+}
+
+/* CALENDAR */
+
+.calendar{
+margin-top:30px;
+display:grid;
+grid-template-columns:repeat(7,1fr);
+gap:10px;
+}
+
+.day{
+padding:15px;
+background:#e5e7eb;
+border:1px solid #e5e7eb;
+text-align:center;
+border-radius:8px;
+font-weight:500;
+transition:0.2s;
+}
+
+.day:hover{
+transform:scale(1.05);
+cursor:pointer;
+}
+
+.week{
+font-weight:bold;
+text-align:center;
+}
+
+/* DAY STATUS */
+
+.presentDay{
+background:#22c55e;
+color:white;
+}
+
+.absentDay{
+background:#ef4444;
+color:white;
+}
+
+/* DARK MODE CALENDAR */
+
+.dark .day{
+background:#334155;
+border:1px solid #475569;
+color:white;
+}
+
+.dark .presentDay{
+background:#16a34a;
+}
+
+.dark .absentDay{
+background:#dc2626;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<button class="dark-toggle" onclick="toggleDark()">
+<i class="fa-solid fa-moon"></i>
+</button>
+
+<script>
+
+if(localStorage.getItem("loggedIn")!=="true"){
+window.location.href="index.html"
+}
+
+</script>
+
+<div class="container">
+
+<h2>Student Monthly Report</h2>
+
+<select id="studentSelect"></select>
+
+<input type="month" id="monthInput">
+
+<button onclick="generateReport()">Generate Report</button>
+
+<div class="stats">
+
+<div class="stat stat-total">
+Total
+<span id="total">0</span>
+</div>
+
+<div class="stat stat-present">
+Present
+<span id="present">0</span>
+</div>
+
+<div class="stat stat-absent">
+Absent
+<span id="absent">0</span>
+</div>
+
+</div>
+
+<h3 style="margin-top:30px;">Monthly Attendance Calendar</h3>
+
+<div class="calendar" id="calendar"></div>
+
+</div>
+
+<script>
+
+/* LOAD STUDENTS */
+
+let students=JSON.parse(localStorage.getItem("students"))||[]
+
+let studentSelect=document.getElementById("studentSelect")
+
+students.forEach(s=>{
+let option=document.createElement("option")
+option.value=s.name
+option.textContent=s.name
+studentSelect.appendChild(option)
+})
+
+/* DEFAULT MONTH */
+
+document.getElementById("monthInput").value=
+new Date().toISOString().slice(0,7)
+
+/* GENERATE REPORT */
+
+function generateReport(){
+
+let name=studentSelect.value
+let monthValue=document.getElementById("monthInput").value
+
+if(!monthValue) return
+
+let month=new Date(monthValue).getMonth()
+let year=new Date(monthValue).getFullYear()
+
+let records=JSON.parse(localStorage.getItem("attendanceList"))||[]
+
+let present=0
+let absent=0
+
+let daysData={}
+
+records.forEach(r=>{
+
+let d=new Date(r.date)
+
+if(r.name===name && d.getMonth()===month && d.getFullYear()===year){
+
+daysData[d.getDate()]=r.status
+
+if(r.status.toLowerCase()==="present") present++
+if(r.status.toLowerCase()==="absent") absent++
+
+}
+
+})
+
+let total=present+absent
+
+document.getElementById("total").innerText=total
+document.getElementById("present").innerText=present
+document.getElementById("absent").innerText=absent
+
+createCalendar(month,year,daysData)
+
+}
+
+/* CREATE CALENDAR */
+
+function createCalendar(month,year,daysData){
+
+let calendar=document.getElementById("calendar")
+calendar.innerHTML=""
+
+let weeks=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
+
+weeks.forEach(w=>{
+let div=document.createElement("div")
+div.className="week"
+div.innerText=w
+calendar.appendChild(div)
+})
+
+let days=new Date(year,month+1,0).getDate()
+let firstDay=new Date(year,month,1).getDay()
+
+for(let i=0;i<firstDay;i++){
+calendar.appendChild(document.createElement("div"))
+}
+
+for(let d=1; d<=days; d++){
+
+let box=document.createElement("div")
+box.className="day"
+box.innerText=d
+
+if(daysData[d]){
+
+if(daysData[d].toLowerCase()==="present"){
+box.classList.add("presentDay")
+}
+
+if(daysData[d].toLowerCase()==="absent"){
+box.classList.add("absentDay")
+}
+
+}
+
+calendar.appendChild(box)
+
+}
+
+}
+
+/* DARK MODE */
+
+function toggleDark(){
+
+document.body.classList.toggle("dark")
+
+if(document.body.classList.contains("dark")){
+localStorage.setItem("theme","dark")
+}else{
+localStorage.setItem("theme","light")
+}
+
+}
+
+if(localStorage.getItem("theme")==="dark"){
+document.body.classList.add("dark")
+}
+
+</script>
+
+</body>
+</html>
