@@ -1,9 +1,12 @@
 <!DOCTYPE html>
+
 <html>
 <head>
 
 <title>Attendance</title>
+
 <link rel="stylesheet" href="style.css">
+
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
@@ -29,6 +32,13 @@ window.location.href="index.html"
 
 <div class="form-box">
 
+<!-- SEARCH STUDENT -->
+
+<input type="text"
+id="studentSearch"
+placeholder="Search student name..."
+onkeyup="filterStudents()">
+
 <select id="name"></select>
 
 <input type="date" id="date">
@@ -41,7 +51,6 @@ window.location.href="index.html"
 <button onclick="saveAttendance()">Submit</button>
 
 </div>
-
 
 <!-- STATS -->
 
@@ -64,18 +73,20 @@ Absent
 
 </div>
 
-
 <!-- TABLE -->
 
 <div class="table-box">
 
-<input type="text" id="search"
+<input type="text"
+id="search"
 placeholder="Search student..."
 onkeyup="searchRecords()">
 
 <br><br>
 
-<input type="date" id="filterDate" onchange="filterByDate()">
+<input type="date"
+id="filterDate"
+onchange="filterByDate()">
 
 <table>
 
@@ -94,7 +105,6 @@ onkeyup="searchRecords()">
 
 </div>
 
-
 <script>
 
 /* LOAD STUDENTS */
@@ -110,6 +120,36 @@ select.innerHTML="<option value=''>Select Student</option>"
 students.forEach(s=>{
 select.innerHTML += `<option value="${s.name}">${s.name}</option>`
 })
+
+}
+
+
+/* SEARCH STUDENT IN DROPDOWN */
+
+function filterStudents(){
+
+let input = document.getElementById("studentSearch").value.toLowerCase()
+
+let select = document.getElementById("name")
+
+let options = select.options
+
+for(let i=0;i<options.length;i++){
+
+let txt = options[i].text.toLowerCase()
+
+if(i===0){
+options[i].style.display="none"
+continue
+}
+
+if(txt.includes(input)){
+options[i].style.display=""
+}else{
+options[i].style.display="none"
+}
+
+}
 
 }
 
@@ -238,7 +278,7 @@ document.getElementById("absentCount").innerText=absent
 }
 
 
-/* SEARCH */
+/* SEARCH TABLE */
 
 function searchRecords(){
 
@@ -256,7 +296,7 @@ updateStats()
 }
 
 
-/* FILTER BY DATE */
+/* FILTER DATE */
 
 function filterByDate(){
 
