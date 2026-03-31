@@ -1,81 +1,249 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <title>Admin Dashboard</title>
+
 <link rel="stylesheet" href="dashboard.css">
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 
 <body>
-<button class="dark-toggle" onclick="toggleDark()">
-<i class="fa-solid fa-moon"></i>
-</button>
-<script>
 
-if(localStorage.getItem("loggedIn")!=="true"){
-window.location.href="index.html"
-}
+<!-- NAVBAR -->
 
-if(localStorage.getItem("role")!=="admin"){
-window.location.href="attendance.html"
-}
+<div class="navbar">
 
-function logout(){
-localStorage.removeItem("loggedIn")
-localStorage.removeItem("role")
-window.location.href="index.html"
-}
+<div class="nav-left">
+<i class="fa-solid fa-layer-group"></i> Admin Web
+</div>
 
-</script>
+<div class="nav-right">
 
-<div class="dashboard-container">
+<div id="datetime"></div>
 
-<div class="dashboard-box">
+<i class="fa-solid fa-bell"></i>
 
-<h2>Admin Dashboard</h2>
+<div class="profile">A</div>
 
-<div class="grid">
+</div>
 
-<div class="card blue" onclick="location.href='attendance.html'">
-<h3>📋 Attendance</h3>
+</div>
+
+
+<div class="container">
+
+<!-- STATS -->
+
+<div class="stats">
+
+<div class="stat blue">
+<i class="fa-solid fa-users"></i>
+<div>
+<p>Total Students</p>
+<h2 id="totalStudents">0</h2>
+</div>
+</div>
+
+<div class="stat green">
+<i class="fa-solid fa-circle-check"></i>
+<div>
+<p>Present Today</p>
+<h2 id="presentToday">0</h2>
+</div>
+</div>
+
+<div class="stat orange">
+<i class="fa-solid fa-xmark"></i>
+<div>
+<p>Absent Today</p>
+<h2 id="absentToday">0</h2>
+</div>
+</div>
+
+<div class="stat purple">
+<i class="fa-solid fa-chart-pie"></i>
+<div>
+<p>Attendance %</p>
+<h2 id="attendancePercent">0%</h2>
+</div>
+</div>
+
+</div>
+
+
+<div class="dashboard-grid">
+
+<!-- ACTION CARDS -->
+
+<div class="actions">
+
+<div class="card blue" onclick="openAttendance()">
+<i class="fa-solid fa-clipboard-check"></i>
+<h3>Attendance</h3>
 <p>Manage attendance</p>
 </div>
 
-<div class="card orange" onclick="location.href='students.html'">
-<h3>🎓 Students</h3>
+<div class="card orange" onclick="openStudents()">
+<i class="fa-solid fa-user-graduate"></i>
+<h3>Students</h3>
 <p>Manage students</p>
 </div>
 
-<div class="card green" onclick="location.href='analytics.html'">
-<h3>📊 Analytics</h3>
+<div class="card green" onclick="openAnalytics()">
+<i class="fa-solid fa-chart-line"></i>
+<h3>Analytics</h3>
 <p>Attendance report</p>
 </div>
 
 <div class="card dark" onclick="logout()">
-<h3>🚪 Logout</h3>
+<i class="fa-solid fa-right-from-bracket"></i>
+<h3>Logout</h3>
 <p>Exit system</p>
 </div>
 
 </div>
 
+<!-- CHART -->
+
+<div class="chart-box">
+<canvas id="attendanceChart"></canvas>
 </div>
 
 </div>
-<script>function toggleDark(){
 
-document.body.classList.toggle("dark")
+</div>
 
-if(document.body.classList.contains("dark")){
-localStorage.setItem("theme","dark")
-}else{
-localStorage.setItem("theme","light")
+
+<script>
+
+/* CLOCK */
+
+function updateTime(){
+
+const now = new Date()
+
+document.getElementById("datetime").innerText =
+now.toDateString()+" "+now.toLocaleTimeString()
+
 }
 
+setInterval(updateTime,1000)
+updateTime()
+
+
+/* NAVIGATION */
+
+function openAttendance(){
+window.location.href="attendance.html"
 }
 
-if(localStorage.getItem("theme")==="dark"){
-document.body.classList.add("dark")
+function openStudents(){
+window.location.href="students.html"
 }
+
+function openAnalytics(){
+window.location.href="analytics.html"
+}
+
+function logout(){
+localStorage.clear()
+window.location.href="index.html"
+}
+
+
+/* LOAD DATA */
+
+let students = JSON.parse(localStorage.getItem("students")) || []
+let attendance = JSON.parse(localStorage.getItem("attendanceList")) || []
+
+document.getElementById("totalStudents").innerText = students.length
+
+
+/* TODAY ATTENDANCE */
+
+const today = new Date().toISOString().split("T")[0]
+
+let todayRecords = attendance.filter(a => a.date === today)
+
+let present = todayRecords.filter(a => a.status === "Present").length
+let absent = todayRecords.filter(a => a.status === "Absent").length
+
+document.getElementById("presentToday").innerText = present
+document.getElementById("absentToday").innerText = absent
+
+
+/* ATTENDANCE PERCENT */
+
+let percent = students.length
+? Math.round((present / students.length) * 100)
+: 0
+
+document.getElementById("attendancePercent").innerText = percent + "%"
+
+
+/* WEEK GRAPH */
+
+let week = [0,0,0,0,0]
+
+attendance.forEach(r => {
+
+let d = new Date(r.date)
+let day = d.getDay()
+
+if(day >=1 && day <=5 && r.status === "Present"){
+week[day-1]++
+}
+
+})
+
+
+/* CHART */
+
+const ctx = document.getElementById('attendanceChart')
+
+new Chart(ctx, {
+
+type: 'bar',
+
+data: {
+labels: ['Mon','Tue','Wed','Thu','Fri'],
+datasets: [{
+label: 'Present Students',
+data: week,
+backgroundColor: [
+'#f59e0b',
+'#14b8a6',
+'#06b6d4',
+'#4b5563',
+'#ef4444'
+],
+borderRadius:8,
+barThickness:60
+}]
+},
+
+options: {
+plugins:{
+legend:{display:false}
+},
+scales:{
+y:{
+beginAtZero:true,
+grid:{color:'rgba(255,255,255,0.2)'}
+},
+x:{
+grid:{display:false}
+}
+}
+}
+
+})
+
 </script>
 
 </body>
